@@ -1,1 +1,0 @@
-fir_lpf_0.vhd,vhdl,xil_defaultlib,../../../../lab3.gen/sources_1/ip/fir_lpf_0_1/sim/fir_lpf_0.vhd,
