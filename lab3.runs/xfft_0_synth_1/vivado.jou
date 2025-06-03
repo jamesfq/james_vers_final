@@ -1,0 +1,13 @@
+#-----------------------------------------------------------
+# Vivado v2021.2 (64-bit)
+# SW Build 3367213 on Tue Oct 19 02:48:09 MDT 2021
+# IP Build 3369179 on Thu Oct 21 08:25:16 MDT 2021
+# Start of session at: Mon Jun  2 14:17:06 2025
+# Process ID: 24064
+# Current directory: O:/ENGS128/fft/lab3.runs/xfft_0_synth_1
+# Command line: vivado.exe -log xfft_0.vds -product Vivado -mode batch -messageDb vivado.pb -notrace -source xfft_0.tcl
+# Log file: O:/ENGS128/fft/lab3.runs/xfft_0_synth_1/xfft_0.vds
+# Journal file: O:/ENGS128/fft/lab3.runs/xfft_0_synth_1\vivado.jou
+# Running On: m210-26, OS: Windows, CPU Frequency: 2904 MHz, CPU Physical cores: 8, Host memory: 34200 MB
+#-----------------------------------------------------------
+source xfft_0.tcl -notrace

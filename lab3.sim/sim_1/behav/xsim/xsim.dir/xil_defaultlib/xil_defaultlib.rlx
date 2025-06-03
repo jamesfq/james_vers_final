@@ -1,0 +1,26 @@
+0.7
+2020.2
+Oct 19 2021
+03:16:22
+O:/ENGS128/fft/lab3.gen/sources_1/ip/blk_mem_gen_0/sim/blk_mem_gen_0.v,1748892408,verilog,,O:/ENGS128/fft/lab3.srcs/sources_1/imports/clk_wiz_0.v,,blk_mem_gen_0,,axi_vip_v1_1_11;processing_system7_vip_v1_0_13;xilinx_vip,../../../../lab3.gen/sources_1/bd/axi_stream_bd/ipshared/3007/hdl;../../../../lab3.gen/sources_1/bd/axi_stream_bd/ipshared/ec67/hdl;C:/Xilinx/Vivado/2021.2/data/xilinx_vip/include,,,,,
+O:/ENGS128/fft/lab3.gen/sources_1/ip/xfft_0/sim/xfft_0.vhd,1748888216,vhdl,,,,xfft_0,,,,,,,,
+O:/ENGS128/fft/lab3.sim/sim_1/behav/xsim/glbl.v,1634335545,verilog,,,,glbl,,axi_vip_v1_1_11;processing_system7_vip_v1_0_13;xilinx_vip,,,,,,
+O:/ENGS128/fft/lab3.srcs/sim_1/new/tb_dds_to_fft.vhd,1748889903,vhdl,,,,tb_dds_to_fft,,,,,,,,
+O:/ENGS128/fft/lab3.srcs/sources_1/imports/axi_dds.vhd,1747622777,vhdl,,,,axi_dds,,,,,,,,
+O:/ENGS128/fft/lab3.srcs/sources_1/imports/axis_i2s_wrapper.vhd,1747622777,vhdl,,,,axis_i2s_wrapper,,,,,,,,
+O:/ENGS128/fft/lab3.srcs/sources_1/imports/axis_receiver.vhd,1747622777,vhdl,,,,axis_receiver,,,,,,,,
+O:/ENGS128/fft/lab3.srcs/sources_1/imports/axis_transmitter.vhd,1748636169,vhdl,,,,axis_transmitter,,,,,,,,
+O:/ENGS128/fft/lab3.srcs/sources_1/imports/clk_wiz_0.v,1747622777,verilog,,O:/ENGS128/fft/lab3.srcs/sources_1/imports/clk_wiz_0_clk_wiz.v,,clk_wiz_0,,axi_vip_v1_1_11;processing_system7_vip_v1_0_13;xilinx_vip,../../../../lab3.gen/sources_1/bd/axi_stream_bd/ipshared/3007/hdl;../../../../lab3.gen/sources_1/bd/axi_stream_bd/ipshared/ec67/hdl;C:/Xilinx/Vivado/2021.2/data/xilinx_vip/include,,,,,
+O:/ENGS128/fft/lab3.srcs/sources_1/imports/clk_wiz_0_clk_wiz.v,1747622777,verilog,,,,clk_wiz_0_clk_wiz,,axi_vip_v1_1_11;processing_system7_vip_v1_0_13;xilinx_vip,../../../../lab3.gen/sources_1/bd/axi_stream_bd/ipshared/3007/hdl;../../../../lab3.gen/sources_1/bd/axi_stream_bd/ipshared/ec67/hdl;C:/Xilinx/Vivado/2021.2/data/xilinx_vip/include,,,,,
+O:/ENGS128/fft/lab3.srcs/sources_1/imports/clock_divider.vhd,1747622777,vhdl,,,,clock_divider,,,,,,,,
+O:/ENGS128/fft/lab3.srcs/sources_1/imports/clock_divider_falling_edge.vhd,1747622777,vhdl,,,,clock_divider_falling_edge,,,,,,,,
+O:/ENGS128/fft/lab3.srcs/sources_1/imports/counter.vhd,1747622777,vhdl,,,,counter,,,,,,,,
+O:/ENGS128/fft/lab3.srcs/sources_1/imports/dds_controller.vhd,1747622777,vhdl,,,,dds_controller,,,,,,,,
+O:/ENGS128/fft/lab3.srcs/sources_1/imports/engs128_axi_dds_S00_AXI.vhd,1747622777,vhdl,,,,engs128_axi_dds_s00_axi,,,,,,,,
+O:/ENGS128/fft/lab3.srcs/sources_1/imports/i2s_clock_gen.vhd,1747622777,vhdl,,,,i2s_clock_gen,,,,,,,,
+O:/ENGS128/fft/lab3.srcs/sources_1/imports/i2s_receiver.vhd,1747622777,vhdl,,,,i2s_receiver,,,,,,,,
+O:/ENGS128/fft/lab3.srcs/sources_1/imports/i2s_transmitter.vhd,1747622777,vhdl,,,,i2s_transmitter,,,,,,,,
+O:/ENGS128/fft/lab3.srcs/sources_1/imports/shift_register.vhd,1747622777,vhdl,,,,shift_register,,,,,,,,
+O:/ENGS128/fft/lab3.srcs/sources_1/imports/sipo_shift_register.vhd,1747622777,vhdl,,,,sipo_shift_register,,,,,,,,
+O:/ENGS128/fft/lab3.srcs/sources_1/new/axis_bulk_fifo.vhd,1748888039,vhdl,,,,axis_bulk_fifo,,,,,,,,
+O:/ENGS128/fft/lab3.srcs/sources_1/new/bulk_fifo.vhd,1748887881,vhdl,,,,bulk_fifo,,,,,,,,

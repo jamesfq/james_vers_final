@@ -1,0 +1,4 @@
+vhdl xil_defaultlib  \
+"../../../../lab3.gen/sources_1/ip/fir_for_sim/sim/fir_for_sim.vhd" \
+
+nosort
