@@ -10,9 +10,9 @@
 
 
 ##Switches
-#set_property -dict { PACKAGE_PIN G15   IOSTANDARD LVCMOS33 } [get_ports {grad_sel_i[0] }]; #IO_L19N_T3_VREF_35 Sch=sw[0]
-#set_property -dict { PACKAGE_PIN P15   IOSTANDARD LVCMOS33 } [get_ports { grad_sel_i[1] }]; #IO_L24P_T3_34 Sch=sw[1]
-set_property -dict { PACKAGE_PIN W13   IOSTANDARD LVCMOS33 } [get_ports {dds_enable_i }]; #IO_L4N_T0_34 Sch=sw[2]
+#set_property -dict { PACKAGE_PIN G15   IOSTANDARD LVCMOS33 } [get_ports { sw[0] }]; #IO_L19N_T3_VREF_35 Sch=sw[0]
+#set_property -dict { PACKAGE_PIN P15   IOSTANDARD LVCMOS33 } [get_ports { sw[1] }]; #IO_L24P_T3_34 Sch=sw[1]
+set_property -dict { PACKAGE_PIN W13   IOSTANDARD LVCMOS33 } [get_ports { dds_enable_i }]; #IO_L4N_T0_34 Sch=sw[2]
 set_property -dict { PACKAGE_PIN T16   IOSTANDARD LVCMOS33 } [get_ports { grad_sel_i }]; #IO_L9P_T1_DQS_34 Sch=sw[3]
 
 
@@ -40,7 +40,8 @@ set_property -dict { PACKAGE_PIN T16   IOSTANDARD LVCMOS33 } [get_ports { grad_s
 #set_property -dict { PACKAGE_PIN F17   IOSTANDARD LVCMOS33 } [get_ports { led6_g }]; #IO_L6N_T0_VREF_35 Sch=led6_g
 #set_property -dict { PACKAGE_PIN M17   IOSTANDARD LVCMOS33 } [get_ports { led6_b }]; #IO_L8P_T1_AD10P_35 Sch=led6_b
 
-## AUDIO CODEC
+
+##Audio Codec
 set_property -dict { PACKAGE_PIN R19   IOSTANDARD LVCMOS33 } [get_ports { ac_bclk_o }]; #IO_0_34 Sch=ac_bclk
 set_property -dict { PACKAGE_PIN R17   IOSTANDARD LVCMOS33 } [get_ports { ac_mclk_o }]; #IO_L19N_T3_VREF_34 Sch=ac_mclk
 set_property -dict { PACKAGE_PIN P18   IOSTANDARD LVCMOS33 } [get_ports { ac_mute_n_o }]; #IO_L23N_T3_34 Sch=ac_muten
