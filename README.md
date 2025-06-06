@@ -1,30 +1,30 @@
 # Final Project Files
-.xpr and .xsa are in top
+  .xpr and .xsa are in top
 
 ## software
-stored in SDK folder. Main .c files are in there, helper files are in their corresponding folder 
-ex. iic.c is in iic folder
+  stored in SDK folder. Main .c files are in there, helper files are in their corresponding folder 
+  ex. iic.c is in iic folder
 
 ## hardware
 
-stored in hw.srcs folder. 
+  stored in hw.srcs folder. 
 
 ### sources
 
 #### bd
-block design stuff
+  block design stuff
 
 #### imports 
-.vhd files used in prior labs
+  .vhd files used in prior labs
 
 #### ip 
-ip sources (not all) used in project
+  ip sources (not all) used in project
 
 #### new
-new .vhd files created for this project
+  new .vhd files created for this project
 
 ### sim
-has testbenches
+  has testbenches
 
 ### constrs
-has contraints file
+  has contraints file
