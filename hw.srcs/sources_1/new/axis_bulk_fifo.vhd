@@ -1,10 +1,10 @@
 ----------------------------------------------------------------------------
---  Lab 2: AXI Stream FIFO
+--  Final Project: AXI Stream Bulk FIFO
 ----------------------------------------------------------------------------
 --  ENGS 128 Spring 2025
 --	Author: James Quirk and Dak Black
 ----------------------------------------------------------------------------
---	Description: AXI Stream FIFO Controller/Responder Interface 
+--	Description: AXI Stream Controller/Responder Interface for the Bulk FIFO 
 ----------------------------------------------------------------------------
 -- Library Declarations
 library ieee;
@@ -15,7 +15,7 @@ use ieee.std_logic_1164.all;
 entity axis_bulk_fifo is
 	generic (
 		DATA_WIDTH	: integer	:= 32;
-		FIFO_DEPTH	: integer	:= 64
+		FIFO_DEPTH	: integer	:= 64 -- FFT loading size
 	);
 	port (
 	
@@ -45,13 +45,15 @@ architecture Behavioral of axis_bulk_fifo is
 ----------------------------------------------------------------------------
 -- Signals
 ----------------------------------------------------------------------------  
-signal last : std_logic := '0';
 signal empty : std_logic := '0';
 signal full : std_logic := '0';
 signal reset : std_logic := '0';
-signal mode : std_logic := '0'; -- MODE: 0 = writing, 1 = reading
 signal write_en : std_logic := '0';
 signal read_en : std_logic := '0';
+
+-- New signals
+signal last : std_logic := '0'; -- Indicates one data value left in the FIFO
+signal mode : std_logic := '0'; -- MODE: 0 = writing in, 1 = reading out
 
 ----------------------------------------------------------------------------
 -- Component Declarations
@@ -99,27 +101,23 @@ fifo_inst : bulk_fifo
 ----------------------------------------------------------------------------
 -- Logic
 ----------------------------------------------------------------------------  
--- Assurance that data is only output when there is data in the FIFO and it is not set to reset
+-- Indicates that the output data is valid when we are reading data out and the reset signal is deactivated
 valid_output : process(mode, s00_axis_aresetn, m00_axis_aresetn)
 begin
-    if (mode = '1') then
+    if (mode = '1'  and s00_axis_aresetn = '1' and m00_axis_aresetn = '1') then -- If in writing mode, FIFO needs to empty, so output valid
         m00_axis_tvalid <= '1';
-    elsif (s00_axis_aresetn = '0' or m00_axis_aresetn = '0') then
-        m00_axis_tvalid <= '0';
     else            
         m00_axis_tvalid <= '0';
     end if;
 end process valid_output;
 
--- Assurance that data is only output when there is data in the FIFO and it is not set to reset
+-- Indicates that the FIFO is ready to receive data when we are writing data in and the reset signal is deactivated
 valid_input : process(mode, s00_axis_aresetn, m00_axis_aresetn)
 begin
-    if (mode = '1') then
-        s00_axis_tready <= '0';
-    elsif (s00_axis_aresetn = '0' or m00_axis_aresetn = '0') then
-        s00_axis_tready <= '0';
-    else
+    if (mode = '0' and s00_axis_aresetn = '1' and m00_axis_aresetn = '1') then -- If in reading mode, FIFO isn't full yet, so output ready
         s00_axis_tready <= '1';
+    else
+        s00_axis_tready <= '0';
     end if;
 end process valid_input;
 
@@ -135,39 +133,39 @@ begin
     end if; 
 end process reset_invert;
 
--- Assurance that data is only output when there is data in the FIFO and it is not set to reset
-toggle_mode : process(last, full, empty)
+-- Toggles the mode each time the FIFO fills/empties entirely. Note that it starts empty, so by default we are in write mode
+toggle_mode : process(full, empty)
 begin
     if (full = '1') then
         mode <= '1';
-    elsif (empty = '1' and mode = '1') then
+    elsif (empty = '1') then
         mode <= '0';
-        m00_axis_tlast <= '0';
-    elsif (last = '1' and mode = '1') then
-        m00_axis_tlast <= '1';                    
-    else
-        m00_axis_tlast <= '0';
     end if;
 end process toggle_mode;
 
+-- Outputs tlast signal when FIFO is about to be emptied
+last_output : process(last, mode)
+begin
+    if (last = '1' and mode = '1') then -- last indicates that there is one data point in the FIFO, mode indicates we are reading out
+        m00_axis_tlast <= '1'; -- tlast only goes high when decrementing to the last data value, not inputting the first data value because of mode checking
+    else
+        m00_axis_tlast <= '0';
+    end if;
+end process last_output;
+
+-- Sets the internal write_en and read_en signals
 set_enables : process(mode, s00_axis_tvalid, m00_axis_tready)
 begin
-    if (mode = '0') then
+    write_en <= '0'; -- Off by default
+    read_en <= '0';
+
+    if (mode = '0' and s00_axis_tvalid = '1') then -- If we are in write mode and input data is valid, write data in
+        write_en <= '1';
         read_en <= '0';
         
-        if (s00_axis_tvalid = '1') then
-            write_en <= '1';
-        else
-            write_en <= '0';
-        end if;
-    else
+    elsif (mode = '1' and m00_axis_tready = '1') then -- If we are in read mode and receiver is ready, read data out
+        read_en <= '1';
         write_en <= '0';
-        
-        if (m00_axis_tready = '1') then
-            read_en <= '1';
-        else
-            read_en <= '0';
-        end if;
     end if;
 end process set_enables;
 

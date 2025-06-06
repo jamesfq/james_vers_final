@@ -278,7 +278,9 @@ component axis_transmitter is
 		m00_axis_tdata       : out std_logic_vector(FIFO_WIDTH-1 downto 0);
 		m00_axis_tlast       : out std_logic := '0';
 		m00_axis_tstrb       : out std_logic_vector(3 downto 0) := (others => '0');
-		m00_axis_tvalid      : out std_logic
+		m00_axis_tvalid      : out std_logic;
+		
+		s_ready               : out std_logic := '0'
 	);
 end component;
     

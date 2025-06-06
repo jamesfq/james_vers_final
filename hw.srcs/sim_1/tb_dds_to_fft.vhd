@@ -1,10 +1,10 @@
 ----------------------------------------------------------------------------
---  Lab 3: Digital Signal Processing
+--  Finsl Project: DDS -> FFT Testbench
 ----------------------------------------------------------------------------
 --  ENGS 128 Spring 2025
 --	Author: James Quirk
 ----------------------------------------------------------------------------
---	Description: Testbench for FIFO --> FIFO AXI stream passthrough
+--	Description: Testbench to validate the transmission of the data from the DDS through the FIFO and FFT and finally out
 ----------------------------------------------------------------------------
 -- Add libraries 
 library IEEE;
@@ -24,40 +24,64 @@ architecture testbench of tb_dds_to_fft is
 ----------------------------------------------------------------------------
 -- Constants
 constant T_HOLD       : time := 10 ns;
-constant AXI_DATA_WIDTH : integer := 32;        -- 32-bit AXI data bus
 constant AXI_FIFO_DEPTH : integer := 64;        -- AXI stream FIFO depth
 constant CLOCK_PERIOD : time := 8ns;            -- 125 MHz clock
-
--- Signal declarations
-signal clk : std_logic := '0';
-signal axi_reset_n : std_logic := '1';
-signal test_num : integer := 0;
-signal mute_en_sw : std_logic := '0';
-
-
-----------------------------------------------------------------------------
--- AXI Stream FIFO
-signal fifo_0_axis_data_out : std_logic_vector(AXI_DATA_WIDTH-1 downto 0) := (others => '0');
-signal fft_data_out : std_logic_vector(47 downto 0) := (others => '0');
-signal fifo_0_axis_data_out_valid, fft_data_out_valid : std_logic := '0';
-signal fifo_0_axis_data_out_last, fft_data_out_last : std_logic := '0';
-signal fifo_0_axis_ready, fft_ready : std_logic := '0';
-
---signal fifo_1_axis_data_out : std_logic_vector(AXI_DATA_WIDTH-1 downto 0);
---signal fifo_1_axis_data_out_valid : std_logic := '0';
---signal fifo_1_axis_data_out_last : std_logic := '0';
-signal fifo_1_axis_ready : std_logic := '0';
-
-signal fifo_0_axis_tstrb, fifo_1_axis_tstrb, fft_data_strb : std_logic_vector((AXI_DATA_WIDTH/8)-1 downto 0) := (others => '0');
-
--- Define constants 
-constant LRCLK_PERIOD: time := 20833ns; 	-- define clock period, 20833ns = 48 kHz
-constant REG_DATA_WIDTH : integer := 4;
 constant C_S00_AXI_DATA_WIDTH : integer := 32;
 constant C_S00_AXI_ADDR_WIDTH : integer := 4;
 
+----------------------------------------------------------------------------
+-- Signals
+signal clk : std_logic := '0';
+signal lrclk :  std_logic := '0';
+signal mute_n, bclk, mclk, data_out : std_logic := '0';
+
+----------------------------------------------------------------------------
+-- AXI Stream FIFO & FFT Signals
+-- FIFO & FFT Handshake signals
+signal fifo_0_axis_data_out_valid, fft_data_out_valid : std_logic := '0';
+signal fifo_0_axis_data_out_last, fft_data_out_last : std_logic := '0';
+signal fifo_0_axis_ready, fft_ready : std_logic := '0';
+signal fifo_0_axis_tstrb, fft_data_strb : std_logic_vector((C_S00_AXI_DATA_WIDTH/8)-1 downto 0) := (others => '0');
+
+-- FIFO Data
+signal fifo_0_axis_data_out : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
+
+-- FFT Data
+signal fft_data_out : std_logic_vector(47 downto 0) := (others => '0');
+signal m_axis_data_tdata_re             : std_logic_vector(23 downto 0) := (others => '0');  -- real data
+signal m_axis_data_tdata_im             : std_logic_vector(23 downto 0) := (others => '0');  -- imaginary data
+signal user_int_temp1, user_int_temp2, user_int_temp3, user_int_temp4, user_int_temp5 :  integer := 0; -- Carry over bin number
+signal mag_real_data_int :  integer;
+signal mag_imag_data_int :  integer;
+signal total_mag_int :  integer;
+signal real_data, imag_data  : integer;
+signal mag_data : STD_LOGIC_VECTOR(24 DOWNTO 0) := (others => '0');
+type mem_type is array (0 to AXI_FIFO_DEPTH-1) of std_logic_vector(23 downto 0);
+signal fft_buf : mem_type := (others => (others => '0'));
+signal fft_data_user : STD_LOGIC_VECTOR ( 7 downto 0 );
+
+-- FFT Configuration
+type T_DO_CONFIG is (NONE, IMMEDIATE, AFTER_START, DONE);
+shared variable do_config : T_DO_CONFIG := NONE;  -- instruction for driving config slave channel
+type T_CFG_FWD_INV is (FWD, INV);
+signal cfg_fwd_inv : T_CFG_FWD_INV := FWD;
+type T_CFG_SCALE_SCH is (ZERO, DEFAULT);
+signal cfg_scale_sch : T_CFG_SCALE_SCH := DEFAULT; -- we will use all these settings as defined, except do_config will be set to immediate when ready
+
+-- FFT Config slave channel signals
+signal s_axis_config_tvalid        : std_logic := '1';  -- payload is valid
+signal s_axis_config_tready        : std_logic := '1';  -- slave is ready
+
+-- FFT Event signals
+signal event_frame_started         : std_logic := '0';
+signal event_tlast_unexpected      : std_logic := '0';
+signal event_tlast_missing         : std_logic := '0';
+signal event_status_channel_halt   : std_logic := '0';
+signal event_data_in_channel_halt  : std_logic := '0';
+signal event_data_out_channel_halt : std_logic := '0';
+
 ----------------------------------------------------------------------------------
--- AXI signals
+-- AXI signals to read and write to registers
 signal S_AXI_AWADDR                   :  std_logic_vector(C_S00_AXI_ADDR_WIDTH-1 downto 0) := (others => '0');
 signal S_AXI_AWVALID                  :  std_logic := '0';
 signal S_AXI_WDATA                    :  std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
@@ -78,77 +102,29 @@ signal S_AXI_AWREADY                  : std_logic := '0';
 signal S_AXI_AWPROT                   : std_logic_vector(2 downto 0) := (others => '0');
 signal S_AXI_ARPROT                   : std_logic_vector(2 downto 0) := (others => '0');
 
+----------------------------------------------------------------------------------
 -- DDS signals
 signal dds_reset                      :  std_logic := '0';
 signal dds_enable                     :  std_logic := '1';
-signal lrclk                          :  std_logic := '0';
 
 ----------------------------------------------------------------------------------
 -- Testbench signals
+signal mute_en_sw : std_logic := '0';
 signal enable_send, enable_read : std_logic := '0';
-signal axi_data_out : std_logic_vector(REG_DATA_WIDTH-1 downto 0) := (others => '0');
+signal axi_data_out : std_logic_vector(C_S00_AXI_ADDR_WIDTH-1 downto 0) := (others => '0');
 signal axi_data_write : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
-
 signal sample_data : std_logic := '0';
-
 signal data_select : std_logic_vector(C_S00_AXI_ADDR_WIDTH-3 downto 0) := (others => '0');
 signal axi_reg : integer := 0;
-signal mute_n, bclk, mclk, data_out : std_logic := '0';
 signal reset_n : std_logic := '1';
+
+----------------------------------------------------------------------------------
+-- AXI Handshake signals
 signal M_AXIS_TREADY, S_AXIS_TREADY : std_logic := '0';
 signal M_AXIS_TDATA, S_AXIS_TDATA : std_logic_vector(C_S00_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
 signal M_AXIS_TSTRB, S_AXIS_TSTRB : std_logic_vector((C_S00_AXI_DATA_WIDTH/8)-1 downto 0) := (others => '0');
 signal M_AXIS_TLAST, S_AXIS_TLAST : std_logic := '0';
 signal M_AXIS_TVALID, S_AXIS_TVALID : std_logic := '0';
-
-signal fft_data_user : STD_LOGIC_VECTOR ( 7 downto 0 );
-
--- Communication between processes regarding DUT configuration
-type T_DO_CONFIG is (NONE, IMMEDIATE, AFTER_START, DONE);
-shared variable do_config : T_DO_CONFIG := NONE;  -- instruction for driving config slave channel
-type T_CFG_FWD_INV is (FWD, INV);
-signal cfg_fwd_inv : T_CFG_FWD_INV := FWD;
-type T_CFG_SCALE_SCH is (ZERO, DEFAULT);
-signal cfg_scale_sch : T_CFG_SCALE_SCH := DEFAULT; -- we will use all these settings as defined, except do_config will be set to immediate when ready
-
--- Config slave channel signals
-signal s_axis_config_tvalid        : std_logic := '1';  -- payload is valid
-signal s_axis_config_tready        : std_logic := '1';  -- slave is ready
-signal s_axis_config_tdata         : std_logic_vector(7 downto 0) := (others => '0');  -- data payload
-
--- Data slave channel signals
-signal s_axis_data_tvalid          : std_logic := '0';  -- payload is valid
-signal s_axis_data_tready          : std_logic := '1';  -- slave is ready
-signal s_axis_data_tdata           : std_logic_vector(47 downto 0) := (others => '0');  -- data payload
-signal s_axis_data_tlast           : std_logic := '0';  -- indicates end of packet
-
--- Config slave channel alias signals
-signal s_axis_config_tdata_fwd_inv      : std_logic                    := '0';              -- forward or inverse
-signal s_axis_config_tdata_scale_sch    : std_logic_vector(7 downto 0) := (others => '0');  -- scaling schedule
-
--- Data slave channel alias signals
-signal s_axis_data_tdata_re             : std_logic_vector(23 downto 0) := (others => '0');  -- real data
-signal s_axis_data_tdata_im             : std_logic_vector(23 downto 0) := (others => '0');  -- imaginary data
-
--- Event signals
-signal event_frame_started         : std_logic := '0';
-signal event_tlast_unexpected      : std_logic := '0';
-signal event_tlast_missing         : std_logic := '0';
-signal event_status_channel_halt   : std_logic := '0';
-signal event_data_in_channel_halt  : std_logic := '0';
-signal event_data_out_channel_halt : std_logic := '0';
-
-signal m_axis_data_tdata_re             : std_logic_vector(11 downto 0) := (others => '0');  -- real data
-signal m_axis_data_tdata_im             : std_logic_vector(11 downto 0) := (others => '0');  -- imaginary data
-signal user_int_temp1, user_int_temp2, user_int_temp3, user_int_temp4, user_int_temp5 :  integer := 0;
-signal mag_real_data_int :  integer;
-signal mag_imag_data_int :  integer;
-signal total_mag_int :  integer;
-signal real_data, imag_data  : integer;
-signal mag_data : STD_LOGIC_VECTOR(24 DOWNTO 0) := (others => '0');
-type mem_type is array (0 to AXI_FIFO_DEPTH-1) of std_logic_vector(23 downto 0);
-signal fft_buf : mem_type := (others => (others => '0'));
-
 
 ----------------------------------------------------------------------------
 -- Component declarations
@@ -269,7 +245,7 @@ end component;
 component xfft_0 is
   Port ( 
     aclk : in STD_LOGIC;
-    s_axis_config_tdata : in STD_LOGIC_VECTOR ( 7 downto 0 );
+    s_axis_config_tdata : in STD_LOGIC_VECTOR ( 15 downto 0 );
     s_axis_config_tvalid : in STD_LOGIC;
     s_axis_config_tready : out STD_LOGIC;
     s_axis_data_tdata : in STD_LOGIC_VECTOR ( 47 downto 0 );
@@ -444,15 +420,15 @@ fft : xfft_0
       aclk                        => clk,
       s_axis_config_tvalid        => s_axis_config_tvalid,
       s_axis_config_tready        => s_axis_config_tready,
-      s_axis_config_tdata         => "01010111",
+      s_axis_config_tdata         => "0000101010101101", -- Provided in the FFT testbench
       s_axis_data_tvalid          => fifo_0_axis_data_out_valid,
       s_axis_data_tready          => fft_ready,
-      s_axis_data_tdata           => "000000000000000000000000" & fifo_0_axis_data_out(31 downto 8),
+      s_axis_data_tdata           => (23 downto 0 => '0') & fifo_0_axis_data_out(31 downto 8), -- Pads the data with 24 0's. Extract the 24 MSBs from fifo_out because we pad the 24-bit data with 8 bits of 0's for AXI transfer 
       s_axis_data_tlast           => fifo_0_axis_data_out_last,
       m_axis_data_tvalid          => fft_data_out_valid,
-      m_axis_data_tready          => '1',
+      m_axis_data_tready          => '1', -- Allows us to read through the whole data sequence
       m_axis_data_tdata           => fft_data_out,
-      m_axis_data_tuser           => fft_data_user, -- REVISIT: ASSIGN
+      m_axis_data_tuser           => fft_data_user,
       m_axis_data_tlast           => fft_data_out_last,
       event_frame_started         => event_frame_started,
       event_tlast_unexpected      => event_tlast_unexpected,
@@ -461,26 +437,6 @@ fft : xfft_0
       event_data_in_channel_halt  => event_data_in_channel_halt,
       event_data_out_channel_halt => event_data_out_channel_halt
       );
- 
- -- AXI Stream FIFO (FIR --> output)
-fifo_1_fft_to_out: axis_bulk_fifo
-port map (
-  
-    s00_axis_aclk => clk,
-    s00_axis_aresetn => axi_reset_n,    -- button 0
-    s00_axis_tready => fifo_1_axis_ready,
-    s00_axis_tdata => fft_data_out(23 downto 0) & "00000000", -- REVISIT: I don't think we want this going here now. We want it going into the FIR
-    s00_axis_tstrb => fft_data_strb,
-    s00_axis_tlast => fft_data_out_last,   -- not using TLAST
-    s00_axis_tvalid => fft_data_out_valid, 
-
-    m00_axis_aclk => clk,
-    m00_axis_aresetn => axi_reset_n,
-    m00_axis_tvalid => S_AXIS_TVALID,
-    m00_axis_tdata => S_AXIS_TDATA,
-    m00_axis_tstrb => S_AXIS_TSTRB,
-    m00_axis_tlast => S_AXIS_TLAST,
-    m00_axis_tready => S_AXIS_TREADY);
 
 ----------------------------------------------------------------------------------
 -- Processes from AXI lite testbench
@@ -533,41 +489,44 @@ BEGIN
     end loop;
 END PROCESS read;
 
+-- Only configure the FFT once
 fft_config: process(clk, s_axis_config_tready)
 begin
     if rising_edge(clk) then
         if (s_axis_config_tready = '1') then
-            s_axis_config_tvalid <= '0';
+            s_axis_config_tvalid <= '0'; -- Deactivate configuration once it has been latched
         end if;
     end if;
 end process;
-  -----------------------------------------------------------------------
-  -- Record outputs, to use later as inputs for another frame
-  -----------------------------------------------------------------------
 
+-- Configures the output of the FFT as an intensity value for interpretation as a color
 square_sum: process(clk)
 begin 
     if rising_edge (clk) then
-
-        m_axis_data_tdata_re <= fft_data_out(23 downto 12);
-        m_axis_data_tdata_im <= fft_data_out(47 downto 36);
+        -- Latch the real and imaginary data
+        m_axis_data_tdata_re <= fft_data_out(23 downto 0);
+        m_axis_data_tdata_im <= fft_data_out(47 downto 24);
         user_int_temp1 <= to_integer(unsigned(fft_data_user));
         
-            -- squaring stuff
+        -- Convert the data to integers
         real_data <= to_integer(signed(m_axis_data_tdata_re));
         imag_data <= to_integer(signed(m_axis_data_tdata_im));
         user_int_temp2 <= user_int_temp1;
-        
+
+        -- Square the real and imaginary components for magnitude        
         mag_real_data_int <= real_data * real_data;
         mag_imag_data_int <= imag_data *imag_data;
         user_int_temp3 <= user_int_temp2;
         
+        -- Sum the magnitudes
         total_mag_int <= mag_real_data_int + mag_imag_data_int;
         user_int_temp4 <= user_int_temp3;
         
+        -- Convert back to a standard logic vector        
         mag_data <= std_logic_vector(to_unsigned(total_mag_int,mag_data'length)); 
         user_int_temp5 <= user_int_temp4;
         
+        -- Store the data in a buffer
         fft_buf(user_int_temp5) <= mag_data(24 downto 1);
            
     end if; 
@@ -599,7 +558,7 @@ stimulus : PROCESS
     enable_read <= '0';
     data_select <= (others => '0');
     axi_data_write <= (others => '0');
-    axi_reg <= 3;           -- we are writing to AXI register 0
+    axi_reg <= 3;           -- actually writes to register 1 because 3 % 2 = 1
     
     wait for 400 ns;
     reset_n <= '1';
@@ -609,7 +568,7 @@ stimulus : PROCESS
     
     wait for 400 ns;
     reset_n <= '1';
-    
+        
     -- BEGIN TEST
     wait until rising_edge(clk);
     wait for CLOCK_PERIOD;
@@ -633,6 +592,7 @@ stimulus : PROCESS
     master_write_axi_reg(S_AXI_AWADDR, S_AXI_WDATA, S_AXI_WSTRB, enable_send, axi_reg, axi_data_write, S_AXI_BVALID);
     wait for 100 ns;
     
+    -- Configure FFT to begin
     cfg_fwd_inv <= FWD;  -- forward transform
     cfg_scale_sch <= DEFAULT;  -- default scaling schedule
     do_config := IMMEDIATE;
@@ -640,11 +600,7 @@ stimulus : PROCESS
     
     
     wait for 150000 ns;
-    
-    -- TEST 2: CORRECT FILTERING
-    
-
-    
+        
     wait;
     std.env.stop;
  END PROCESS stimulus;

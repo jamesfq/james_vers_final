@@ -1,10 +1,10 @@
 ----------------------------------------------------------------------------
---  Lab 2: AXI Stream FIFO and DMA
+--  Final Project: AXI Stream Bulk FIFO Testbench
 ----------------------------------------------------------------------------
 --  ENGS 128 Spring 2025
 --	Author: Kendall Farnham
 ----------------------------------------------------------------------------
---	Description: Testbench for FIFO --> FIFO AXI stream passthrough
+--	Description: Testbench verifying the correct functionality from Bulk FIFO --> Bulk FIFO, AXI stream passthrough
 ----------------------------------------------------------------------------
 -- Add libraries 
 library IEEE;
@@ -118,7 +118,7 @@ port map (
     s00_axis_tready => fifo_1_axis_ready,
     s00_axis_tdata => fifo_0_axis_data_out,
     s00_axis_tstrb => fifo_0_axis_tstrb,
-    s00_axis_tlast => fifo_0_axis_data_out_last,   -- not using TLAST
+    s00_axis_tlast => fifo_0_axis_data_out_last,
     s00_axis_tvalid => fifo_0_axis_data_out_valid, 
 
     m00_axis_aclk => clk,

@@ -1,10 +1,10 @@
 ----------------------------------------------------------------------------
---  Lab 2: Basic FIFO
+--  Final Project: Bulk FIFO
 ----------------------------------------------------------------------------
 --  ENGS 128 Spring 2025
 --	Author: James Quirk and Dak Black
 ----------------------------------------------------------------------------
---	Description: Generic FIFO buffer that is extended as an AXI-viable FIFO in axis_fifo.vhd
+--	Description: New FIFO buffer similar to axis_fifo.vhd, however outputs a last output signal to enable further signal processing
 ----------------------------------------------------------------------------
 -- Library Declarations
 library IEEE;
@@ -30,7 +30,7 @@ Port (
     rd_data_o   : out std_logic_vector(DATA_WIDTH-1 downto 0)  := (others => '0');
     
     -- Status flags
-    last_o          : out std_logic;
+    last_o          : out std_logic; -- New Signal
     empty_o         : out std_logic;
     full_o          : out std_logic);   
 end bulk_fifo;
@@ -38,6 +38,7 @@ end bulk_fifo;
 ----------------------------------------------------------------------------
 -- Architecture Definition 
 architecture Behavioral of bulk_fifo is
+
 ----------------------------------------------------------------------------
 -- Define Constants and Signals
 ----------------------------------------------------------------------------
@@ -48,14 +49,14 @@ signal read_pointer, write_pointer : integer range 0 to FIFO_DEPTH-1 := 0;
 signal data_count : integer range 0 to FIFO_DEPTH := 0;
 
 signal full, ctr_d_add, ctr_d_subtr : std_logic := '0';
-signal empty : std_logic:= '1';
-signal last : std_logic:= '0';
+signal empty : std_logic := '1';
+signal last : std_logic := '0'; -- by defauly deactivated
 ----------------------------------------------------------------------------
 begin
 -- Latch the empty and full signals as ouputs
 empty_o <= empty;
 full_o  <= full;
-last_o <= last;
+last_o <= last; -- latches the signal to the output
 ----------------------------------------------------------------------------
 -- Processes and Logic
 ----------------------------------------------------------------------------
@@ -127,7 +128,7 @@ begin
     elsif(data_count = 0) then 
         empty <= '1';
     elsif (data_count = 1) then
-        last <= '1';
+        last <= '1'; -- when the data count reaches 1, indicate the last signal; note that this occurs when inputting the first data or outputting the last signal, so further processing is done in the AXI wrapper to guarantee correct m00_axis_tlast output
     end if;
 end process signals_set;
 
